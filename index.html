@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mirror's Echo — 課堂管理系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1c1c26;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --accent: #b388ff;
+    --accent2: #7c4dff;
+    --gold: #ffd54f;
+    --text: #f0eeff;
+    --muted: #8a85a0;
+    --success: #69f0ae;
+    --danger: #ff6b6b;
+    --warning: #ffd54f;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ── LANDING ── */
+  #screen-landing {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background: radial-gradient(ellipse at 60% 20%, rgba(124,77,255,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(179,136,255,0.10) 0%, transparent 50%),
+                var(--bg);
+  }
+  #screen-landing.active { display: flex; }
+  .logo-mark {
+    width: 72px; height: 72px; border-radius: 50%;
+    border: 1.5px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin-bottom: 1.5rem;
+    box-shadow: 0 0 40px rgba(179,136,255,0.2);
+  }
+  .logo-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(26px, 6vw, 38px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-align: center;
+    margin-bottom: 0.4rem;
+    background: linear-gradient(135deg, #f0eeff 0%, #b388ff 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo-sub { color: var(--muted); font-size: 13px; letter-spacing: 0.12em; text-align: center; margin-bottom: 3rem; }
+  .landing-btns { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px; }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: #fff; border: none; border-radius: var(--radius);
+    padding: 14px 24px; font-size: 15px; font-family: inherit;
+    font-weight: 500; cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    letter-spacing: 0.04em;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn-secondary {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border2); border-radius: var(--radius);
+    padding: 14px 24px; font-size: 15px; font-family: inherit;
+    font-weight: 400; cursor: pointer; transition: background 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .btn-secondary:hover { background: var(--surface2); }
+
+  /* ── HEADER ── */
+  .app-header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .header-logo { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .tag-role {
+    font-size: 11px; padding: 3px 10px; border-radius: 20px;
+    background: rgba(179,136,255,0.15); color: var(--accent);
+    letter-spacing: 0.06em; font-weight: 500;
+  }
+  .btn-logout {
+    background: none; border: 1px solid var(--border2);
+    color: var(--muted); border-radius: 8px; padding: 5px 12px;
+    font-size: 12px; cursor: pointer; font-family: inherit;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-logout:hover { color: var(--text); border-color: var(--accent); }
+
+  /* ── MAIN LAYOUT ── */
+  .main-wrap { max-width: 860px; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+
+  /* ── NAV TABS ── */
+  .nav-tabs {
+    display: flex; gap: 4px;
+    background: var(--surface); border-radius: var(--radius);
+    padding: 4px; margin-bottom: 1.5rem; overflow-x: auto;
+  }
+  .nav-tab {
+    flex: 1; min-width: 80px; padding: 8px 12px;
+    background: none; border: none; color: var(--muted);
+    font-family: inherit; font-size: 13px; font-weight: 400;
+    border-radius: 10px; cursor: pointer; transition: all 0.18s;
+    white-space: nowrap; text-align: center;
+  }
+  .nav-tab.active { background: var(--surface2); color: var(--text); font-weight: 500; }
+
+  /* ── SECTION ── */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 13px; color: var(--muted); letter-spacing: 0.08em;
+    font-weight: 500; margin-bottom: 1rem; text-transform: uppercase;
+  }
+
+  /* ── STAT ROW ── */
+  .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 1rem;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 500; color: var(--accent); }
+
+  /* ── FORM ── */
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.04em; }
+  input, select, textarea {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-family: inherit;
+    font-size: 14px; padding: 10px 12px; outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 70px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
+
+  .btn-sm {
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-family: inherit; cursor: pointer;
+    border: none; font-weight: 500; transition: opacity 0.2s;
+  }
+  .btn-accent { background: var(--accent2); color: #fff; }
+  .btn-accent:hover { opacity: 0.85; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-danger-sm { background: rgba(255,107,107,0.15); color: var(--danger); border: 1px solid rgba(255,107,107,0.25); }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted); font-weight: 500; font-size: 11px;
+    letter-spacing: 0.06em; white-space: nowrap;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 20px; font-weight: 500; white-space: nowrap;
+  }
+  .badge-purple { background: rgba(179,136,255,0.15); color: var(--accent); }
+  .badge-gold { background: rgba(255,213,79,0.15); color: var(--gold); }
+  .badge-green { background: rgba(105,240,174,0.15); color: var(--success); }
+  .badge-red { background: rgba(255,107,107,0.15); color: var(--danger); }
+  .badge-gray { background: rgba(138,133,160,0.15); color: var(--muted); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { background: var(--surface2); border-radius: 99px; height: 6px; margin-top: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
+  .progress-bar.green { background: var(--success); }
+  .progress-bar.yellow { background: var(--warning); }
+  .progress-bar.red { background: var(--danger); }
+
+  /* ── ATTENDANCE ── */
+  .att-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .att-card {
+    background: var(--surface2); border: 2px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .att-card:hover { border-color: var(--border2); }
+  .att-card.present { border-color: var(--success); background: rgba(105,240,174,0.06); }
+  .att-card.absent { border-color: var(--danger); background: rgba(255,107,107,0.05); opacity: 0.6; }
+  .att-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .att-sub { font-size: 11px; color: var(--muted); }
+
+  /* ── STUDENT CARD VIEW ── */
+  .student-hero {
+    background: linear-gradient(135deg, rgba(124,77,255,0.2), rgba(179,136,255,0.08));
+    border: 1px solid rgba(179,136,255,0.25);
+    border-radius: var(--radius); padding: 2rem;
+    text-align: center; margin-bottom: 1.5rem;
+  }
+  .student-hero-name { font-size: 22px; font-weight: 500; margin-bottom: 0.25rem; }
+  .student-hero-sub { color: var(--muted); font-size: 13px; }
+
+  /* ── QUERY ── */
+  #screen-student {
+    display: none; flex-direction: column;
+    align-items: center; justify-content: flex-start;
+    min-height: 100vh; padding: 2rem 1.25rem;
+    background: radial-gradient(ellipse at 70% 10%, rgba(124,77,255,0.12) 0%, transparent 55%), var(--bg);
+  }
+  #screen-student.active { display: flex; }
+  .query-box {
+    width: 100%; max-width: 380px; margin-top: 2rem;
+  }
+  .query-input-wrap { display: flex; gap: 8px; }
+  .query-input-wrap input { flex: 1; font-size: 18px; letter-spacing: 0.15em; text-align: center; }
+  .student-result { margin-top: 2rem; width: 100%; max-width: 600px; }
+
+  /* ── HISTORY LIST ── */
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-date { color: var(--muted); min-width: 90px; }
+  .history-dance { flex: 1; padding: 0 12px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 999;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 1.75rem;
+    width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-size: 17px; font-weight: 500; margin-bottom: 1.25rem; }
+
+  /* ── LOGIN ── */
+  #screen-login {
+    display: none; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh; padding: 2rem;
+    background: var(--bg);
+  }
+  #screen-login.active { display: flex; }
+  .login-box { width: 100%; max-width: 340px; }
+  .login-title { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 0.5rem; color: var(--accent); }
+  .login-sub { color: var(--muted); font-size: 13px; margin-bottom: 2rem; }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; color: var(--muted); padding: 3rem 1rem; font-size: 14px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 520px) {
+    .form-row { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr; }
+    .stat-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── FLASH ── */
+  .flash {
+    position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--border2);
+    color: var(--text); border-radius: var(--radius-sm);
+    padding: 10px 20px; font-size: 13px; z-index: 9999;
+    animation: slideUp 0.25s ease;
+    pointer-events: none; white-space: nowrap;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+  .section-title { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+  .shared-note { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .inline-actions { display: flex; gap: 6px; }
+  .chip { font-size: 11px; padding: 2px 8px; background: var(--surface2); border-radius: 20px; color: var(--muted); border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ══ LANDING ══ -->
+<div id="screen-landing" class="screen">
+  <div class="logo-mark">🪞</div>
+  <div class="logo-title">Mirror's Echo</div>
+  <div class="logo-sub">PERFORMANCE STUDIO</div>
+  <div class="landing-btns">
+    <button class="btn-primary" onclick="goTo('screen-login')">老師登入</button>
+    <button class="btn-secondary" onclick="goTo('screen-student')">學生查詢課卡</button>
+  </div>
+</div>
+
+<!-- ══ LOGIN ══ -->
+<div id="screen-login" class="screen">
+  <div class="login-box">
+    <div class="login-title">老師登入</div>
+    <div class="login-sub">請輸入管理員密碼</div>
+    <div style="margin-bottom:12px">
+      <label>密碼</label>
+      <input type="password" id="login-pw" placeholder="••••••" onkeydown="if(e.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="doLogin()">登入</button>
+    <div style="margin-top:1rem;text-align:center">
+      <button class="btn-logout" onclick="goTo('screen-landing')">← 返回</button>
+    </div>
+    <div id="login-err" style="color:var(--danger);font-size:13px;margin-top:10px;text-align:center;display:none">密碼錯誤</div>
+  </div>
+</div>
+
+<!-- ══ TEACHER ══ -->
+<div id="screen-teacher" class="screen">
+  <div class="app-header">
+    <div class="header-logo">M·E</div>
+    <div class="header-right">
+      <span class="tag-role">老師</span>
+      <button class="btn-logout" onclick="logout()">登出</button>
+    </div>
+  </div>
+  <div class="main-wrap">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('tab-overview')">總覽</button>
+      <button class="nav-tab" onclick="switchTab('tab-attendance')">點名</button>
+      <button class="nav-tab" onclick="switchTab('tab-students')">學生管理</button>
+      <button class="nav-tab" onclick="switchTab('tab-history')">上課紀錄</button>
+      <button class="nav-tab" onclick="switchTab('tab-settings')">設定</button>
+    </div>
+
+    <!-- ── OVERVIEW ── -->
+    <div id="tab-overview" class="section active">
+      <div class="stat-row" id="overview-stats"></div>
+      <div class="card">
+        <div class="card-title">學生課卡狀態</div>
+        <div class="table-wrap"><table id="overview-table">
+          <thead><tr><th>學生</th><th>課程包</th><th>剩餘堂數</th><th>有效期</th><th>狀態</th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ── ATTENDANCE ── -->
+    <div id="tab-attendance" class="section">
+      <div class="card">
+        <div class="card-title">今日點名</div>
+        <div class="form-row triple">
+          <div>
+            <label>日期</label>
+            <input type="date" id="att-date" />
+          </div>
+          <div>
+            <label>舞種 / 課程</label>
+            <input type="text" id="att-dance" placeholder="e.g. Hiphop、MV副歌班" list="dance-list" />
+            <datalist id="dance-list"></datalist>
+          </div>
+          <div>
+            <label>課程類型</label>
+            <select id="att-type">
+              <option value="常態課">常態課</option>
+              <option value="作品專攻">作品專攻</option>
+              <option value="場地租借">場地租借</option>
+            </select>
+          </div>
+        </div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:1rem">點擊學生卡片切換出席／缺席狀態</div>
+        <div class="att-grid" id="att-grid"></div>
+        <div class="form-actions" style="margin-top:1.5rem">
+          <button class="btn-sm btn-accent" onclick="saveAttendance()">儲存出席紀錄</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STUDENTS ── -->
+    <div id="tab-students" class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div class="section-title" style="margin:0">學生管理</div>
+        <button class="btn-sm btn-accent" onclick="openStudentModal()">+ 新增學生</button>
+      </div>
+      <div id="student-list"></div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div id="tab-history" class="section">
+      <div class="card">
+        <div class="card-title">上課紀錄</div>
+        <div class="form-row">
+          <div>
+            <label>篩選學生</label>
+            <select id="hist-filter-student"><option value="">全部學生</option></select>
+          </div>
+          <div>
+            <label>篩選月份</label>
+            <input type="month" id="hist-filter-month" />
+          </div>
+        </div>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="tab-settings" class="section">
+      <div class="card">
+        <div class="card-title">舞種清單</div>
+        <div id="dance-tag-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1rem"></div>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="new-dance-input" placeholder="新增舞種名稱" style="flex:1" />
+          <button class="btn-sm btn-accent" onclick="addDanceType()">新增</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">更改管理密碼</div>
+        <div class="form-row">
+          <div><label>新密碼</label><input type="password" id="new-pw" placeholder="••••••" /></div>
+          <div><label>確認新密碼</label><input type="password" id="new-pw2" placeholder="••••••" /></div>
+        </div>
+        <button class="btn-sm btn-accent" onclick="changePw()">更新密碼</button>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--danger)">危險區域</div>
+        <button class="btn-sm btn-danger-sm" onclick="if(confirm('確定要清除所有資料？此操作無法復原。'))clearAll()">清除所有資料</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STUDENT QUERY ══ -->
+<div id="screen-student" class="screen">
+  <div style="width:100%;max-width:600px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:2rem">
+      <button class="btn-logout" onclick="goTo('screen-landing')">← 返回</button>
+      <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--accent)">學生課卡查詢</div>
+    </div>
+    <div class="query-box" style="max-width:100%">
+      <label style="font-size:14px;margin-bottom:8px;display:block">輸入你的查詢碼</label>
+      <div class="query-input-wrap">
+        <input type="text" id="query-code" placeholder="例：ME001" maxlength="10"
+          style="text-transform:uppercase"
+          onkeydown="if(event.key==='Enter')queryStudent()" />
+        <button class="btn-sm btn-accent" onclick="queryStudent()">查詢</button>
+      </div>
+      <div id="query-err" style="color:var(--danger);font-size:13px;margin-top:8px;display:none">找不到此查詢碼</div>
+    </div>
+    <div id="student-result" class="student-result"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL: STUDENT ══ -->
+<div class="modal-overlay" id="modal-student">
+  <div class="modal">
+    <div class="modal-title" id="modal-student-title">新增學生</div>
+    <div class="form-row">
+      <div><label>姓名 *</label><input type="text" id="s-name" placeholder="學生姓名" /></div>
+      <div><label>查詢碼 *</label><input type="text" id="s-code" placeholder="例：ME001" style="text-transform:uppercase" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>聯絡方式</label><input type="text" id="s-contact" placeholder="LINE / 手機號碼" /></div>
+      <div><label>備註</label><input type="text" id="s-note" placeholder="任何備註" /></div>
+    </div>
+    <hr class="divider" />
+    <div style="font-size:13px;color:var(--muted);margin-bottom:1rem;font-weight:500">課程包設定</div>
+    <div class="form-row">
+      <div>
+        <label>課程包類型</label>
+        <select id="s-pack-type" onchange="updatePackUI()">
+          <option value="">— 尚無課程包 —</option>
+          <option value="單堂">單堂（500元/堂）</option>
+          <option value="四堂">四堂課卡（1800元）</option>
+          <option value="十堂">十堂課卡（3750元）</option>
+          <option value="二十堂">二十堂課卡（6000元）</option>
+          <option value="作品五堂">作品專攻一期五堂（2500元）</option>
+          <option value="自訂">自訂（私人包班等）</option>
+        </select>
+      </div>
+      <div>
+        <label>堂數</label>
+        <input type="number" id="s-total" min="1" placeholder="總堂數" />
+      </div>
+    </div>
+    <div class="form-row" id="pack-extra-row">
+      <div>
+        <label>有效期限</label>
+        <input type="date" id="s-expire" />
+      </div>
+      <div>
+        <label>共用人數上限</label>
+        <select id="s-share">
+          <option value="1">不共用（僅本人）</option>
+          <option value="2">可與1位朋友共用</option>
+          <option value="3">可與2位朋友共用</option>
+        </select>
+      </div>
+    </div>
+    <div id="shared-members-wrap" style="display:none;margin-bottom:12px">
+      <label>共用成員（查詢碼，用逗號分隔）</label>
+      <input type="text" id="s-shared-members" placeholder="例：ME002,ME003" />
+      <div class="shared-note">共用成員上課也會從此課卡扣堂</div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-accent" onclick="saveStudent()">儲存</button>
+      <button class="btn-sm btn-ghost" onclick="closeModal('modal-student')">取消</button>
+      <button class="btn-sm btn-danger-sm" id="btn-delete-student" style="display:none;margin-left:auto" onclick="deleteStudent()">刪除學生</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD PACK ══ -->
+<div class="modal-overlay" id="modal-pack">
+  <div class="modal">
+    <div class="modal-title">新增 / 更換課程包</div>
+    <input type="hidden" id="pack-target-id" />
+    <div class="form-row">
+      <div>
+        <label>課程包類型</label>
+        <select id="p-type">
+          <option value="單堂">單堂（500元/堂）</option>
+          <option value="四堂">四堂課卡（1800元）</option>
+          <option value="十堂">十堂課卡（3750元）</option>
+          <option value="二十堂">二十堂課卡（6000元）</option>
+          <option value="作品五堂">作品專攻一期五堂（2500元）</option>
+          <option value="自訂">自訂（私人包班等）</option>
+        </select>
+      </div>
+      <div><label>堂數</label><input type="number" id="p-total" min="1" placeholder="總堂數" /></div>
+    </div>
+    <div class="form-row">
+      <div><label>有效期限</label><input type="date" id="p-expire" /></div>
+      <div>
+        <label>共用人數上限</label>
+        <select id="p-share" onchange="updatePackShareUI()">
+          <option value="1">不共用（僅本人）</option>
+          <option value="2">可與1位朋友共用</option>
+          <option value="3">可與2位朋友共用</option>
+        </select>
+      </div>
+    </div>
+    <div id="p-shared-wrap" style="display:none;margin-bottom:12px">
+      <label>共用成員查詢碼（逗號分隔）</label>
+      <input type="text" id="p-shared-members" placeholder="例：ME002" />
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-accent" onclick="savePack()">確認新增</button>
+      <button class="btn-sm btn-ghost" onclick="closeModal('modal-pack')">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════
+// DATA LAYER — Google Sheets
+// ══════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycbwLU_VG5Pfo5lpaj03ZEUSV9DYQIJA7EhYdw2s9Rst3MvfSKIUaIWbuGbApzMcweT4/exec';
+
+// Local cache so UI stays fast
+const cache = {};
+
+async function apiGet(key, def) {
+  if (cache[key] !== undefined) return cache[key];
+  try {
+    const r = await fetch(`${API}?action=get${cap(key)}`);
+    const j = await r.json();
+    const val = j.data ? JSON.parse(j.data) : def;
+    cache[key] = val;
+    return val;
+  } catch { return cache[key] ?? def; }
+}
+
+async function apiSet(key, val) {
+  cache[key] = val;
+  try {
+    await fetch(API, {
+      method: 'POST',
+      body: JSON.stringify({ action: `set${cap(key)}`, value: val })
+    });
+  } catch { console.warn('Save failed, cached locally'); }
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Sync wrappers — UI calls these; they read from cache (populated on login)
+function getStudents() { return cache['students'] ?? []; }
+function setStudents(s) { cache['students'] = s; apiSet('students', s); }
+function getRecords() { return cache['records'] ?? []; }
+function setRecords(r) { cache['records'] = r; apiSet('records', r); }
+function getDanceTypes() { return cache['danceTypes'] ?? ['Hiphop','爵士','Breaking','Popping','Locking','MV副歌班','作品專攻','街舞基礎']; }
+function setDanceTypes(d) { cache['danceTypes'] = d; apiSet('danceTypes', d); }
+function getPw() { return cache['pw'] ?? 'me2024'; }
+function setPw(p) { cache['pw'] = p; apiSet('config', { pw: p }); }
+
+async function loadAllData() {
+  showLoading(true);
+  try {
+    cache['students'] = await apiGet('students', []);
+    cache['records'] = await apiGet('records', []);
+    cache['danceTypes'] = await apiGet('danceTypes', ['Hiphop','爵士','Breaking','Popping','Locking','MV副歌班','作品專攻','街舞基礎']);
+    const cfg = await apiGet('config', { pw: 'me2024' });
+    cache['pw'] = cfg ? cfg.pw : 'me2024';
+  } finally { showLoading(false); }
+}
+
+function showLoading(on) {
+  let el = document.getElementById('loading-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-overlay';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,15,0.85);z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;';
+    el.innerHTML = '<div style="width:32px;height:32px;border:2px solid rgba(179,136,255,0.3);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="color:var(--muted);font-size:13px">載入中...</div>';
+    const style = document.createElement('style');
+    style.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(style);
+    document.body.appendChild(el);
+  }
+  el.style.display = on ? 'flex' : 'none';
+}
+
+// ══════════════════════════════
+// NAVIGATION
+// ══════════════════════════════
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-teacher') renderAll();
+  if (id === 'screen-student') { document.getElementById('query-code').value = ''; document.getElementById('student-result').innerHTML = ''; }
+}
+
+function logout() { goTo('screen-landing'); }
+
+function switchTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'tab-attendance') renderAttendance();
+  if (id === 'tab-students') renderStudents();
+  if (id === 'tab-history') renderHistory();
+  if (id === 'tab-overview') renderOverview();
+  if (id === 'tab-settings') renderSettings();
+}
+
+// ══════════════════════════════
+// LOGIN
+// ══════════════════════════════
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const err = document.getElementById('login-err');
+  // Load data first to get latest password
+  await loadAllData();
+  if (pw === getPw()) {
+    err.style.display = 'none';
+    document.getElementById('login-pw').value = '';
+    goTo('screen-teacher');
+  } else {
+    err.style.display = 'block';
+  }
+}
+
+// ══════════════════════════════
+// OVERVIEW
+// ══════════════════════════════
+function renderOverview() {
+  const students = getStudents();
+  const records = getRecords();
+  const today = new Date();
+
+  // stats
+  const active = students.filter(s => s.pack && s.remaining > 0).length;
+  const expiring = students.filter(s => {
+    if (!s.expire) return false;
+    const d = new Date(s.expire);
+    const diff = (d - today) / 86400000;
+    return diff >= 0 && diff <= 14;
+  }).length;
+
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">學生人數</div><div class="stat-value">${students.length}</div></div>
+    <div class="stat-card"><div class="stat-label">有效課卡</div><div class="stat-value" style="color:var(--success)">${active}</div></div>
+    <div class="stat-card"><div class="stat-label">即將到期（14天內）</div><div class="stat-value" style="color:var(--warning)">${expiring}</div></div>
+    <div class="stat-card"><div class="stat-label">本月出席次數</div><div class="stat-value">${records.filter(r => r.date && r.date.startsWith(today.toISOString().slice(0,7))).length}</div></div>
+  `;
+
+  const tbody = document.querySelector('#overview-table tbody');
+  if (!students.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">尚無學生資料</td></tr>'; return; }
+  tbody.innerHTML = students.map(s => {
+    const pct = s.total ? Math.round((s.remaining / s.total) * 100) : 0;
+    const barClass = pct > 40 ? 'green' : pct > 15 ? 'yellow' : 'red';
+    let status = '';
+    if (!s.pack) status = '<span class="badge badge-gray">無課卡</span>';
+    else if (s.remaining <= 0) status = '<span class="badge badge-red">堂數用盡</span>';
+    else if (s.expire && new Date(s.expire) < today) status = '<span class="badge badge-red">已過期</span>';
+    else if (s.expire && (new Date(s.expire) - today) / 86400000 <= 14) status = '<span class="badge badge-gold">即將到期</span>';
+    else status = '<span class="badge badge-green">正常</span>';
+    const shareNote = s.shareMax > 1 ? `<div class="shared-note">可共用 ${s.shareMax} 人</div>` : '';
+    return `<tr>
+      <td><strong>${s.name}</strong><br><span style="font-size:11px;color:var(--muted)">${s.code}</span>${shareNote}</td>
+      <td>${s.pack || '—'}</td>
+      <td>
+        <span style="font-size:15px;font-weight:500">${s.remaining ?? '—'}</span>
+        ${s.total ? `<span style="color:var(--muted);font-size:12px"> / ${s.total}</span>` : ''}
+        ${s.total ? `<div class="progress-wrap"><div class="progress-bar ${barClass}" style="width:${pct}%"></div></div>` : ''}
+      </td>
+      <td style="font-size:13px;color:var(--muted)">${s.expire || '—'}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════
+// ATTENDANCE
+// ══════════════════════════════
+let attState = {};
+
+function renderAttendance() {
+  const students = getStudents();
+  const grid = document.getElementById('att-grid');
+  const today = new Date().toISOString().slice(0,10);
+  if (!document.getElementById('att-date').value) document.getElementById('att-date').value = today;
+  attState = {};
+  students.forEach(s => { attState[s.id] = 'none'; });
+
+  // populate dance datalist
+  const dl = document.getElementById('dance-list');
+  dl.innerHTML = getDanceTypes().map(d => `<option value="${d}">`).join('');
+
+  if (!students.length) { grid.innerHTML = '<div class="empty">尚無學生，請先新增學生</div>'; return; }
+  renderAttGrid(students);
+}
+
+function renderAttGrid(students) {
+  const grid = document.getElementById('att-grid');
+  grid.innerHTML = students.map(s => {
+    const st = attState[s.id];
+    const cardClass = st === 'present' ? 'present' : st === 'absent' ? 'absent' : '';
+    const label = st === 'present' ? '✓ 出席' : st === 'absent' ? '✗ 缺席' : '—';
+    const remaining = s.remaining !== undefined ? `剩 ${s.remaining} 堂` : '無課卡';
+    return `<div class="att-card ${cardClass}" onclick="toggleAtt('${s.id}')">
+      <div class="att-name">${s.name}</div>
+      <div class="att-sub">${remaining}</div>
+      <div style="margin-top:6px;font-size:12px;color:${st==='present'?'var(--success)':st==='absent'?'var(--danger)':'var(--muted)'}">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAtt(id) {
+  const cur = attState[id];
+  attState[id] = cur === 'none' ? 'present' : cur === 'present' ? 'absent' : 'none';
+  renderAttGrid(getStudents());
+}
+
+function saveAttendance() {
+  const date = document.getElementById('att-date').value;
+  const dance = document.getElementById('att-dance').value.trim();
+  const type = document.getElementById('att-type').value;
+  if (!date) { flash('請選擇日期'); return; }
+  if (!dance) { flash('請輸入舞種 / 課程名稱'); return; }
+
+  const students = getStudents();
+  const records = getRecords();
+  let count = 0;
+
+  students.forEach(s => {
+    const st = attState[s.id];
+    if (st === 'none') return;
+
+    // check if this student is a shared member — find the primary card
+    let primaryId = s.id;
+    let primaryStudent = s;
+    if (s.sharedMembers && s.sharedMembers.length) {
+      // this student has their own card
+    } else {
+      // check if this student uses someone else's card
+      const host = students.find(h => h.sharedMembers && h.sharedMembers.includes(s.code));
+      if (host) { primaryId = host.id; primaryStudent = host; }
+    }
+
+    records.push({
+      id: Date.now() + Math.random(),
+      studentId: s.id,
+      primaryCardId: primaryId,
+      date, dance, type,
+      status: st
+    });
+    count++;
+
+    // deduct from primary card if present
+    if (st === 'present') {
+      const idx = students.findIndex(x => x.id === primaryId);
+      if (idx !== -1 && students[idx].remaining > 0) {
+        students[idx].remaining = Math.max(0, (students[idx].remaining || 0) - 1);
+      }
+    }
+  });
+
+  setStudents(students);
+  setRecords(records);
+  flash(`已儲存 ${count} 筆出席紀錄，堂數已自動扣除`);
+  renderOverview();
+  renderAttGrid(students);
+}
+
+// ══════════════════════════════
+// STUDENTS
+// ══════════════════════════════
+let editingStudentId = null;
+
+function renderStudents() {
+  const students = getStudents();
+  const container = document.getElementById('student-list');
+  if (!students.length) { container.innerHTML = '<div class="empty">尚無學生資料，點擊右上角新增</div>'; return; }
+  container.innerHTML = students.map(s => {
+    const pct = s.total ? Math.round((s.remaining / s.total) * 100) : 0;
+    const barClass = pct > 40 ? 'green' : pct > 15 ? 'yellow' : 'red';
+    const shareInfo = s.shareMax > 1 ? `<span class="chip">可共用 ${s.shareMax} 人</span>` : '';
+    const members = s.sharedMembers && s.sharedMembers.length ? `<span class="chip">共用：${s.sharedMembers.join(', ')}</span>` : '';
+    return `<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:16px;font-weight:500">${s.name}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">查詢碼：<strong style="color:var(--accent)">${s.code}</strong>　${s.contact ? '聯絡：' + s.contact : ''}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${shareInfo}${members}</div>
+        </div>
+        <div class="inline-actions">
+          <button class="btn-sm btn-ghost" onclick="openPackModal('${s.id}')">換課程包</button>
+          <button class="btn-sm btn-ghost" onclick="openStudentModal('${s.id}')">編輯</button>
+        </div>
+      </div>
+      <hr class="divider" />
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">課程包</div>
+          <div style="font-size:14px">${s.pack || '尚無課程包'}</div>
+        </div>
+        <div style="flex:1;min-width:120px">
+          <div style="font-size:11px;color:var(--muted)">剩餘堂數</div>
+          <div style="font-size:18px;font-weight:500;color:${s.remaining<=2?'var(--danger)':'var(--text)'}">${s.remaining ?? '—'} <span style="font-size:12px;color:var(--muted)">/ ${s.total ?? '—'}</span></div>
+          ${s.total ? `<div class="progress-wrap"><div class="progress-bar ${barClass}" style="width:${Math.max(pct,0)}%"></div></div>` : ''}
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--muted)">有效期</div>
+          <div style="font-size:13px">${s.expire || '—'}</div>
+        </div>
+      </div>
+      ${s.note ? `<div style="margin-top:8px;font-size:12px;color:var(--muted)">備註：${s.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openStudentModal(id) {
+  editingStudentId = id || null;
+  const title = document.getElementById('modal-student-title');
+  const delBtn = document.getElementById('btn-delete-student');
+  if (id) {
+    const s = getStudents().find(x => x.id === id);
+    title.textContent = '編輯學生';
+    delBtn.style.display = 'inline-flex';
+    document.getElementById('s-name').value = s.name || '';
+    document.getElementById('s-code').value = s.code || '';
+    document.getElementById('s-contact').value = s.contact || '';
+    document.getElementById('s-note').value = s.note || '';
+    document.getElementById('s-pack-type').value = s.pack || '';
+    document.getElementById('s-total').value = s.total || '';
+    document.getElementById('s-expire').value = s.expire || '';
+    document.getElementById('s-share').value = s.shareMax || '1';
+    document.getElementById('s-shared-members').value = (s.sharedMembers || []).join(',');
+  } else {
+    title.textContent = '新增學生';
+    delBtn.style.display = 'none';
+    ['s-name','s-code','s-contact','s-note','s-total','s-expire','s-shared-members'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('s-pack-type').value = '';
+    document.getElementById('s-share').value = '1';
+  }
+  updatePackUI();
+  openModal('modal-student');
+}
+
+function updatePackUI() {
+  const pack = document.getElementById('s-pack-type').value;
+  const shareVal = document.getElementById('s-share').value;
+  document.getElementById('pack-extra-row').style.display = pack ? 'grid' : 'none';
+  document.getElementById('shared-members-wrap').style.display = (pack && shareVal > 1) ? 'block' : 'none';
+  // auto-fill total
+  const totals = { '單堂':1, '四堂':4, '十堂':10, '二十堂':20, '作品五堂':5 };
+  if (totals[pack] && !document.getElementById('s-total').value) {
+    document.getElementById('s-total').value = totals[pack];
+  }
+  // auto-fill share max
+  const shareDef = { '十堂':'2', '二十堂':'3' };
+  if (shareDef[pack]) document.getElementById('s-share').value = shareDef[pack];
+}
+
+function saveStudent() {
+  const name = document.getElementById('s-name').value.trim();
+  const code = document.getElementById('s-code').value.trim().toUpperCase();
+  if (!name || !code) { flash('姓名和查詢碼為必填'); return; }
+
+  const students = getStudents();
+  // check duplicate code
+  const dup = students.find(s => s.code === code && s.id !== editingStudentId);
+  if (dup) { flash('此查詢碼已被使用'); return; }
+
+  const pack = document.getElementById('s-pack-type').value;
+  const total = parseInt(document.getElementById('s-total').value) || 0;
+  const expire = document.getElementById('s-expire').value;
+  const shareMax = parseInt(document.getElementById('s-share').value) || 1;
+  const sharedRaw = document.getElementById('s-shared-members').value;
+  const sharedMembers = sharedRaw ? sharedRaw.split(',').map(x => x.trim().toUpperCase()).filter(Boolean) : [];
+
+  if (editingStudentId) {
+    const idx = students.findIndex(s => s.id === editingStudentId);
+    const old = students[idx];
+    students[idx] = { ...old, name, code, contact: document.getElementById('s-contact').value.trim(), note: document.getElementById('s-note').value.trim(),
+      pack: pack || old.pack, total: total || old.total, remaining: pack !== old.pack ? total : old.remaining,
+      expire: expire || old.expire, shareMax, sharedMembers };
+  } else {
+    students.push({ id: Date.now().toString(), name, code,
+      contact: document.getElementById('s-contact').value.trim(),
+      note: document.getElementById('s-note').value.trim(),
+      pack, total, remaining: total, expire, shareMax, sharedMembers });
+  }
+  setStudents(students);
+  closeModal('modal-student');
+  renderStudents();
+  renderOverview();
+  flash(editingStudentId ? '學生資料已更新' : '學生已新增');
+}
+
+function deleteStudent() {
+  if (!confirm('確定要刪除此學生？')) return;
+  const students = getStudents().filter(s => s.id !== editingStudentId);
+  setStudents(students);
+  closeModal('modal-student');
+  renderStudents();
+  renderOverview();
+  flash('學生已刪除');
+}
+
+// ══════════════════════════════
+// PACK MODAL
+// ══════════════════════════════
+function openPackModal(id) {
+  document.getElementById('pack-target-id').value = id;
+  const s = getStudents().find(x => x.id === id);
+  document.getElementById('p-type').value = s.pack || '四堂';
+  document.getElementById('p-total').value = s.total || '';
+  document.getElementById('p-expire').value = '';
+  document.getElementById('p-share').value = s.shareMax || '1';
+  document.getElementById('p-shared-members').value = '';
+  updatePackShareUI();
+  openModal('modal-pack');
+}
+
+function updatePackShareUI() {
+  const v = document.getElementById('p-share').value;
+  document.getElementById('p-shared-wrap').style.display = v > 1 ? 'block' : 'none';
+}
+
+function savePack() {
+  const id = document.getElementById('pack-target-id').value;
+  const pack = document.getElementById('p-type').value;
+  const total = parseInt(document.getElementById('p-total').value) || 0;
+  const expire = document.getElementById('p-expire').value;
+  const shareMax = parseInt(document.getElementById('p-share').value) || 1;
+  const sharedRaw = document.getElementById('p-shared-members').value;
+  const sharedMembers = sharedRaw ? sharedRaw.split(',').map(x => x.trim().toUpperCase()).filter(Boolean) : [];
+  if (!total) { flash('請輸入堂數'); return; }
+  const students = getStudents();
+  const idx = students.findIndex(s => s.id === id);
+  if (idx !== -1) {
+    students[idx] = { ...students[idx], pack, total, remaining: total, expire, shareMax, sharedMembers };
+  }
+  setStudents(students);
+  closeModal('modal-pack');
+  renderStudents();
+  renderOverview();
+  flash('課程包已更新');
+}
+
+// ══════════════════════════════
+// HISTORY
+// ══════════════════════════════
+function renderHistory() {
+  const students = getStudents();
+  const records = getRecords();
+
+  // populate filter
+  const sel = document.getElementById('hist-filter-student');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部學生</option>' + students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  sel.value = cur;
+
+  const filterStudent = document.getElementById('hist-filter-student').value;
+  const filterMonth = document.getElementById('hist-filter-month').value;
+
+  let filtered = [...records];
+  if (filterStudent) filtered = filtered.filter(r => r.studentId === filterStudent);
+  if (filterMonth) filtered = filtered.filter(r => r.date && r.date.startsWith(filterMonth));
+  filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+  const container = document.getElementById('history-list');
+  if (!filtered.length) { container.innerHTML = '<div class="empty">無符合紀錄</div>'; return; }
+
+  // group by date
+  const byDate = {};
+  filtered.forEach(r => { if (!byDate[r.date]) byDate[r.date] = []; byDate[r.date].push(r); });
+
+  container.innerHTML = Object.entries(byDate).sort((a,b) => b[0].localeCompare(a[0])).map(([date, rows]) => {
+    return `<div style="margin-bottom:1.5rem">
+      <div style="font-size:12px;color:var(--accent);letter-spacing:0.06em;margin-bottom:6px">${date}</div>
+      ${rows.map(r => {
+        const s = students.find(x => x.id === r.studentId);
+        return `<div class="history-item">
+          <div class="history-date">${s ? s.name : '—'}</div>
+          <div class="history-dance">${r.dance} <span style="font-size:11px;color:var(--muted)">(${r.type})</span></div>
+          <span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status==='present'?'出席':'缺席'}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('hist-filter-student').addEventListener('change', renderHistory);
+document.getElementById('hist-filter-month').addEventListener('change', renderHistory);
+
+// ══════════════════════════════
+// SETTINGS
+// ══════════════════════════════
+function renderSettings() {
+  const types = getDanceTypes();
+  document.getElementById('dance-tag-list').innerHTML = types.map((d, i) =>
+    `<span class="chip" style="cursor:pointer" onclick="removeDance(${i})">${d} ✕</span>`
+  ).join('');
+}
+
+function addDanceType() {
+  const val = document.getElementById('new-dance-input').value.trim();
+  if (!val) return;
+  const types = getDanceTypes();
+  if (!types.includes(val)) { types.push(val); setDanceTypes(types); }
+  document.getElementById('new-dance-input').value = '';
+  renderSettings();
+  flash('舞種已新增');
+}
+
+function removeDance(i) {
+  const types = getDanceTypes();
+  types.splice(i, 1);
+  setDanceTypes(types);
+  renderSettings();
+}
+
+function changePw() {
+  const p1 = document.getElementById('new-pw').value;
+  const p2 = document.getElementById('new-pw2').value;
+  if (!p1) { flash('請輸入新密碼'); return; }
+  if (p1 !== p2) { flash('兩次密碼不一致'); return; }
+  cache['pw'] = p1;
+  apiSet('config', { pw: p1 });
+  document.getElementById('new-pw').value = '';
+  document.getElementById('new-pw2').value = '';
+  flash('密碼已更新');
+}
+
+async function clearAll() {
+  cache['students'] = [];
+  cache['records'] = [];
+  cache['danceTypes'] = ['Hiphop','爵士','Breaking','Popping','Locking','MV副歌班','作品專攻','街舞基礎'];
+  await apiSet('students', []);
+  await apiSet('records', []);
+  await apiSet('danceTypes', cache['danceTypes']);
+  flash('所有資料已清除');
+  renderAll();
+}
+
+// ══════════════════════════════
+// STUDENT QUERY
+// ══════════════════════════════
+async function queryStudent() {
+  await loadAllData();
+  const code = document.getElementById('query-code').value.trim().toUpperCase();
+  const err = document.getElementById('query-err');
+  const result = document.getElementById('student-result');
+  if (!code) return;
+
+  const students = getStudents();
+  // find by own code or shared member code
+  let s = students.find(x => x.code === code);
+  let isShared = false;
+  let hostStudent = null;
+  if (!s) {
+    // check if this code is a shared member of someone else's card
+    hostStudent = students.find(h => h.sharedMembers && h.sharedMembers.includes(code));
+    if (hostStudent) { s = students.find(x => x.code === code); isShared = true; }
+  }
+
+  if (!s && !hostStudent) { err.style.display = 'block'; result.innerHTML = ''; return; }
+  err.style.display = 'none';
+
+  const cardHolder = hostStudent || s;
+  const records = getRecords().filter(r => r.studentId === (s ? s.id : null) || (hostStudent && r.studentId === hostStudent.id));
+  const myRecords = getRecords().filter(r => r.studentId === (s ? s.id : hostStudent.id));
+  myRecords.sort((a,b) => b.date.localeCompare(a.date));
+
+  const pct = cardHolder.total ? Math.round((cardHolder.remaining / cardHolder.total) * 100) : 0;
+  const barClass = pct > 40 ? 'green' : pct > 15 ? 'yellow' : 'red';
+  const sharedNote = isShared ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">共用 ${cardHolder.name} 的課卡</div>` : (cardHolder.shareMax > 1 ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">此課卡可共用 ${cardHolder.shareMax} 人</div>` : '');
+
+  const recentRows = myRecords.slice(0, 20).map(r =>
+    `<div class="history-item">
+      <div class="history-date">${r.date}</div>
+      <div class="history-dance">${r.dance}</div>
+      <span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status==='present'?'出席':'缺席'}</span>
+    </div>`
+  ).join('') || '<div class="empty" style="padding:1.5rem 0">尚無出席紀錄</div>';
+
+  result.innerHTML = `
+    <div class="student-hero">
+      <div class="student-hero-name">${s ? s.name : code}</div>
+      <div class="student-hero-sub">查詢碼：${code}${sharedNote}</div>
+    </div>
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">課程包</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div>
+          <div style="font-size:15px;font-weight:500">${cardHolder.pack || '尚無課程包'}</div>
+          ${cardHolder.expire ? `<div style="font-size:13px;color:var(--muted)">有效期：${cardHolder.expire}</div>` : ''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:30px;font-weight:500;color:${cardHolder.remaining<=2?'var(--danger)':'var(--accent)'}">${cardHolder.remaining ?? '—'}</div>
+          <div style="font-size:12px;color:var(--muted)">剩餘堂數 / ${cardHolder.total ?? '—'}</div>
+        </div>
+      </div>
+      ${cardHolder.total ? `<div class="progress-wrap" style="margin-top:12px"><div class="progress-bar ${barClass}" style="width:${Math.max(pct,0)}%"></div></div>` : ''}
+    </div>
+    <div class="card">
+      <div class="card-title">最近出缺席紀錄</div>
+      ${recentRows}
+    </div>
+  `;
+}
+
+// ══════════════════════════════
+// MODAL HELPERS
+// ══════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+
+// ══════════════════════════════
+// FLASH
+// ══════════════════════════════
+function flash(msg) {
+  const el = document.createElement('div');
+  el.className = 'flash';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2600);
+}
+
+// ══════════════════════════════
+// RENDER ALL
+// ══════════════════════════════
+function renderAll() {
+  renderOverview();
+}
+
+// ══════════════════════════════
+// INIT
+// ══════════════════════════════
+goTo('screen-landing');
+</script>
+</body>
+</html>
